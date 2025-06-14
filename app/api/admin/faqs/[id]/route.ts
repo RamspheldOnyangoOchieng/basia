@@ -1,17 +1,20 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 
-// Create a Supabase client with admin privileges
-const adminClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+// Use proper server-side env vars
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+}
+
+const adminClient = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
   },
-)
+})
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -21,7 +24,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "FAQ ID is required" }, { status: 400 })
     }
 
-    // First, try to disable RLS for this operation
     try {
       await adminClient.rpc("disable_rls")
     } catch (rlsError) {
